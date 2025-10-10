@@ -9,12 +9,10 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -25,8 +23,8 @@ SECRET_KEY = 'django-insecure-5y(nbq07fa!t$px(y!1#a!&!p^qj#_3b(1kmm*r84s@gz_o9zi
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['*']
+INTERNAL_IPS = ["172.30.88.250"]
 
 # Application definition
 
@@ -37,19 +35,36 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'main.apps.MainConfig',
+    'users.apps.UserConfig',
+    'rest_framework',
+    'rest_framework.exceptions',
+    'django_extensions',
+    'corsheaders',
+    'debug_toolbar',
+    'rest_framework.authtoken',
+    'djoser',
+    'drf_api_logger',
+    'drf_spectacular',
+    'taggit',
+    'drf_dark_theme',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'drf_api_logger.middleware.api_logger_middleware.APILoggerMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'trancpence.urls'
+DRF_API_LOGGER_DATABASE = True
 
 TEMPLATES = [
     {
@@ -75,8 +90,20 @@ WSGI_APPLICATION = 'trancpence.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'trancpencebd',
+        'USER': 'root',
+        'PASSWORD': '(Andromeda_22)',
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'CONN_MAX_AGE': 300,
+        'TEST': {
+            'NAME': 'trancpence_test',
+        },
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'connect_timeout': 30
+        }
     }
 }
 
@@ -105,12 +132,29 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/db0",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
+            "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+        }
+    }
+}
+CACHE_TTL = 60 * 15
+REST_FRAMEWORK_EXTENSIONS = {
+    'DEFAULT_CACHE_RESPONSE_TIMEOUT': CACHE_TTL,
+    'DEFAULT_USE_CACHE': 'default',
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -121,3 +165,78 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'drf_dark_theme.renderers.MoonshineBrowsableAPIRenderer', # comment when production
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+SILENCED_SYSTEM_CHECKS = ['security.W019']
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+
+DJOSER = {
+    'LOGIN_FIELD': 'username',
+    'PASSWORD_FIELD': 'password',
+    'SERIALIZERS': {
+        'user_create': 'users.serializers.CustomUserCreateSerializer',
+        'current_user': 'users.serializers.CustomUserSerializer',
+        'set_username': 'users.serializers.CustomSetUsernameSerializer',
+        'set_email': 'users.serializers.CustomSetEmailSerializer',
+    },
+    'PERMISSIONS': {
+        'users': ['rest_framework.permissions.IsAuthenticated'],
+    },
+    'EMAIL': {
+        'activation': 'djoser.email.ActivationEmail',
+        'confirmation': 'djoser.email.ConfirmationEmail',
+        'password_reset': 'djoser.email.PasswordResetEmail',
+        'password_changed_confirmation': 'djoser.email.PasswordChangedConfirmationEmail',
+        'username_changed_confirmation': 'djoser.email.UsernameChangedConfirmationEmail',
+        'username_reset': 'djoser.email.UsernameResetEmail',
+    },
+    'ACTIVATION_URL': 'activate/{uid}/{token}/',
+    'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
+    'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': True,
+    'SEND_CONFIRMATION_EMAIL': True,
+    'DOMAIN': '172.30.88.250:8000',
+    'PROTOCOL': 'http',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'trancpence',
+    'DESCRIPTION': 'trancpence DRF Project',
+    'VERSION': '6.6.6',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+
+
+# Ваши учетные данные Gmail
+EMAIL_HOST_USER = 'rostislavovvseslav@gmail.com'  # Замените на ваш Gmail
+EMAIL_HOST_PASSWORD = 'cbaaxoiqyaogsixf'  # Пароль приложения, не обычный пароль!
+
+# Дополнительные настройки
+DEFAULT_FROM_EMAIL = 'rostislavovvseslav@gmail.com'  # Email отправителя по умолчанию
+SERVER_EMAIL = 'rostislavovvseslav@gmail.com'  # Email для отправки ошибок сервера
+
