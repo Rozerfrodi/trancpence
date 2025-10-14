@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'djoser',
     'drf_api_logger',
     'drf_spectacular',
-    'taggit',
     'drf_dark_theme',
 ]
 

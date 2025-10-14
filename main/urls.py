@@ -4,9 +4,9 @@ from main.views import *
 
 app_name = 'main'
 router = DefaultRouter()
-router.register(r'main', OperationViewSet, basename='main_operation')
+router.register(r'operations', OperationViewSet, basename='main_operation')
 urlpatterns = [
 	path('', tpshka, name='tpshka'),
-	path('operations/', include(router.urls)),
-	path('graph/', GraphViewSet.as_view({'get': 'list'}), name='graph'),
+	path('', include(router.urls), name='operation_list'),
+	path('graph/', GraphViewSet.as_view({'get': 'params'}), name='graph'),
 ]

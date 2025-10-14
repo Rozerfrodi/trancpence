@@ -1,17 +1,14 @@
-from django.contrib.auth import get_user_model
-from django.db import transaction
-from djoser.conf import settings
 from rest_framework import serializers
-from rest_framework.authtoken.models import Token
 from users.models import UserInOutInfo
-from .models import *
-from taggit.serializers import (TagListSerializerField,
-                                TaggitSerializer)
 
-class UserDataTagsSerializer(TaggitSerializer ,serializers.ModelSerializer):
-	tag = TagListSerializerField()
+
+class UserDataTagsSerializer(serializers.ModelSerializer):
+	tag = serializers.CharField(source='tag.tag')
+	amount = serializers.FloatField()
+	svg = serializers.CharField(source='tag.svg')
+	created_at = serializers.DateTimeField(read_only=True, format='%Y-%m-%d %H:%M:%S')
 	class Meta:
 		model = UserInOutInfo
-		fields = ('id', 'title', 'date', 'created_at', 'operation_type', 'tag', 'amount')
+		fields = ('id', 'title', 'date', 'created_at', 'operation_type', 'tag', 'amount', 'svg')
 
 

@@ -50,7 +50,7 @@ class CustomUserCreateSerializer(BaseUserCreateSerializer):
 					date=transaction_date,
 					title=title,
 					operation_type='income' if suma > 0 else 'expense',
-					ammount=suma or 0,
+					amount=abs(suma) if suma < 0 else suma,
 				)
 				transactions_to_create.append(transaction_obj)
 
