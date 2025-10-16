@@ -12,3 +12,7 @@ class UserDataTagsSerializer(serializers.ModelSerializer):
 		fields = ('id', 'title', 'date', 'created_at', 'operation_type', 'tag', 'amount', 'svg')
 
 
+class UserDataSerializer(serializers.Serializer):
+	date_start = serializers.DateField(required=False)
+	date_end = serializers.DateField(required=False)
+	tags = serializers.ListField(allow_empty=True)

@@ -10,6 +10,7 @@ class UserInOutInfo(models.Model):
 	operation_type = models.CharField(max_length=10, choices=(('income', 'income'), ('expense', 'expense')))
 	amount = models.DecimalField(max_digits=10, decimal_places=2)
 	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
 	tag = models.ForeignKey('OperationTags', on_delete=models.CASCADE, null=True, blank=True, default=1, related_name='tags', verbose_name='tag')
 
 	class Meta:
