@@ -59,8 +59,10 @@ class CustomUserCreateSerializer(BaseUserCreateSerializer):
 					UserInOutInfo.objects.bulk_create(transactions_to_create)
 
 		except Exception as e:
-			print(f'error transaction: {e}')
-
+			return Response({
+				'status': 'fatal error',
+				'message': f'{e} operation failed',
+			}, status=status.HTTP_409_CONFLICT)
 
 class CustomSetUsernameSerializer(UsernameSerializer):
 	class Meta:
