@@ -3,12 +3,21 @@ from rest_framework.permissions import IsAuthenticated
 from djoser.views import UserViewSet
 from django.contrib.auth import get_user_model
 from djoser import utils
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound, FileResponse
 from django.contrib.auth.tokens import default_token_generator
 from .models import *
 from users.serializers import *
+import os
+import trancpence.settings as settings
 
 User = get_user_model()
+
+
+def get_example_file(request):
+	file_path = os.path.join(settings.BASE_DIR, 'files', 'example.xlsx')
+	return FileResponse(open(file_path, 'rb'), as_attachment=True, filename='example.xlsx')
+
+
 class CustomUserViewSet(UserViewSet):
 	@action(
 		detail=False,

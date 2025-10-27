@@ -5,7 +5,7 @@ from django.utils.text import slugify
 
 class UserInOutInfo(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE)
-	date = models.DateField(auto_now=False, auto_now_add=False)
+	date = models.DateField(auto_now=False, auto_now_add=False, verbose_name='operation date')
 	title = models.CharField(max_length=100)
 	operation_type = models.CharField(max_length=10, choices=(('income', 'income'), ('expense', 'expense')))
 	amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -18,6 +18,14 @@ class UserInOutInfo(models.Model):
 		verbose_name = 'User In-Out'
 		verbose_name_plural = 'Users In-Out'
 		app_label = 'users'
+		indexes = [
+			models.Index(
+				fields=['user', 'date'],
+			),
+			models.Index(
+				fields=['user', 'tag'],
+			)
+		]
 
 	def __str__(self):
 		return self.title
@@ -25,11 +33,17 @@ class UserInOutInfo(models.Model):
 
 class OperationTags(models.Model):
 	tag = models.CharField(max_length=100, unique=True, verbose_name='tag')
-	slug = models.SlugField(max_length=100, unique=True)
+	slug = models.SlugField(max_length=100, unique=True, verbose_name='slug')
 	svg = models.TextField(max_length=100, blank=True, default='', verbose_name='svg')
 
 	def __str__(self):
 		return self.tag
+
+	class Meta:
+		ordering = ['-tag']
+		verbose_name = 'Operation Tag'
+		verbose_name_plural = 'Operation Tags'
+		app_label = 'users'
 
 	def save(self, *args, **kwargs):
 		if self.pk and self.tag != self.objects.get(pk=self.pk).tag:

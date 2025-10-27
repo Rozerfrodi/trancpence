@@ -11,4 +11,5 @@ urlpatterns = [
 	re_path(r'^auth/', include('djoser.urls.authtoken')),
 	path('', include(router.urls)),
 	path('activate/<str:uid>/<str:token>/', activate_user_redirect, name='activate'),
+	path('download_example/', get_example_file, name='download_example'),
 ]
