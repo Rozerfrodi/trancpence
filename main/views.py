@@ -1,5 +1,7 @@
 from datetime import datetime
 from pprint import pprint
+
+from django.contrib.admin.templatetags.admin_list import pagination
 from rest_framework_extensions.cache.mixins import CacheResponseMixin
 from django.db.models import F, Case, When, DecimalField
 from django.db.models.aggregates import *
@@ -11,16 +13,13 @@ from main.serializers import *
 from users.models import OperationTags
 from django.core.cache import cache
 
-# class MonthYear(Func):
-# 	function = 'DATE_FORMAT'
-# 	template = "%(function)s(%(expressions)s, '%%%%M %%%%Y')"
 
 def tpshka(request):
 	if request.method == 'GET':
 		return redirect('swagger-ui')
 
 
-class OperationViewSet(viewsets.ModelViewSet):
+class OperationViewSet(viewsets.ReadOnlyModelViewSet):
 	serializer_class = UserDataTagsSerializer
 	permission_classes = [IsAuthenticated]
 
@@ -34,15 +33,14 @@ class OperationViewSet(viewsets.ModelViewSet):
 
 class GraphViewSet(CacheResponseMixin, viewsets.ViewSet):
 	permission_classes = [IsAuthenticated]
-
 	def params(self, request, *args, **kwargs):
 		serializer = UserDataSerializer(data=request.data)
 		serializer.is_valid(raise_exception=True)
 		user = request.user
 		date_start = serializer.validated_data.get('date_start')
 		date_end = serializer.validated_data.get('date_end')
-		tags = serializer.validated_data.get('tags') if len(
-			serializer.validated_data.get('tags')) > 0 else list(OperationTags.objects.values_list('tag', flat=True))
+		tags = serializer.validated_data.get('tags') if len(serializer.validated_data.get('tags')) > 0 \
+			else list(OperationTags.objects.values_list('tag', flat=True))
 		fields = (user, date_start, date_end, tags)
 
 		response_data = {

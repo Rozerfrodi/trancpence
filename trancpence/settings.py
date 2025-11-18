@@ -64,11 +64,10 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'trancpence.urls'
 DRF_API_LOGGER_DATABASE = True
-FILE_DIR = BASE_DIR / 'files'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
+        'DIRS': [BASE_DIR]
 	    ,
         'APP_DIRS': True,
         'OPTIONS': {
@@ -105,7 +104,6 @@ DATABASES = {
         }
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -178,7 +176,7 @@ SILENCED_SYSTEM_CHECKS = ['security.W019']
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / 'files'
 
 
 DJOSER = {
@@ -186,7 +184,6 @@ DJOSER = {
     'PASSWORD_FIELD': 'password',
     'SERIALIZERS': {
         'user_create': 'users.serializers.CustomUserCreateSerializer',
-        'current_user': 'users.serializers.CustomUserSerializer',
         'set_username': 'users.serializers.CustomSetUsernameSerializer',
         'set_email': 'users.serializers.CustomSetEmailSerializer',
     },
@@ -232,4 +229,3 @@ EMAIL_HOST_PASSWORD = 'cbaaxoiqyaogsixf'  # Пароль приложения, �
 # Дополнительные настройки
 DEFAULT_FROM_EMAIL = 'rostislavovvseslav@gmail.com'  # Email отправителя по умолчанию
 SERVER_EMAIL = 'rostislavovvseslav@gmail.com'  # Email для отправки ошибок сервера
-

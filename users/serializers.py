@@ -1,5 +1,7 @@
+import os
 from datetime import datetime
 import openpyxl
+from django.conf import settings
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -40,11 +42,15 @@ class CustomUserCreateSerializer(BaseUserCreateSerializer):
 		tags = {t['tag']: t['id'] for t in OperationTags.objects.values('id', 'tag')}
 		row_count = ok_rows = 0
 		try:
+			if not file:
+				raise FileNotFoundError('File not found, please try again')
+			else:
+				DataFile.objects.create(file=file, user=user, file_name=file.name)
 			wb = openpyxl.load_workbook(file, read_only=True, data_only=True)
 			sheet = wb.active
 
 			transactions_to_create = []
-
+			f = DataFile.objects.values('id').get(file_name=file.name, user=user)
 			for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, max_col=4, values_only=True):
 				row_count += 1
 				date, title, suma, tag = row
@@ -60,6 +66,11 @@ class CustomUserCreateSerializer(BaseUserCreateSerializer):
 				if not tag_id:
 					continue
 
+				if len(title) > 40:
+					continue
+				else:
+					title = title.strip()
+
 				transaction_obj = UserInOutInfo(
 					user=user,
 					date=transaction_date,
@@ -67,6 +78,7 @@ class CustomUserCreateSerializer(BaseUserCreateSerializer):
 					operation_type='income' if suma > 0 else 'expense',
 					tag_id=tag_id,
 					amount=abs(suma) if suma < 0 else suma,
+					file_id=f.get('id'),
 				)
 
 				transactions_to_create.append(transaction_obj)
@@ -89,6 +101,7 @@ class CustomUserCreateSerializer(BaseUserCreateSerializer):
 				}
 
 		except Exception as e:
+			User.objects.filter(username=user.username).delete()
 			raise e
 
 
@@ -118,3 +131,4 @@ class CustomSetEmailSerializer(serializers.ModelSerializer):
 	def validate(self, attrs):
 		attrs = super().validate(attrs)
 		return attrs
+

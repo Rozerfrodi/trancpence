@@ -1,3 +1,5 @@
+import os
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.text import slugify
@@ -11,7 +13,8 @@ class UserInOutInfo(models.Model):
 	amount = models.DecimalField(max_digits=10, decimal_places=2)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
-	tag = models.ForeignKey('OperationTags', on_delete=models.CASCADE, null=True, blank=True, default=1, related_name='tags', verbose_name='tag')
+	tag = models.ForeignKey('OperationTags', on_delete=models.SET_NULL, null=True, blank=True, default=1, related_name='tags', verbose_name='tag')
+	file = models.ForeignKey('DataFile', on_delete=models.CASCADE, null=True, blank=True)
 
 	class Meta:
 		ordering = ['-date']
@@ -24,11 +27,43 @@ class UserInOutInfo(models.Model):
 			),
 			models.Index(
 				fields=['user', 'tag'],
+			),
+			models.Index(
+				fields=['user', 'file'],
 			)
 		]
 
 	def __str__(self):
 		return self.title
+
+
+class DataFile(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	file = models.FileField(upload_to='temp_files/', verbose_name='file')
+	file_name = models.CharField(max_length=100, verbose_name='file_name')
+	uploaded_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		ordering = ['-uploaded_at']
+		verbose_name = 'Data File'
+		verbose_name_plural = 'Data Files'
+		app_label = 'users'
+		indexes = [
+			models.Index(
+				fields=['user', 'file_name'],
+			),
+			models.Index(
+				fields=['file', 'file_name'],
+			)
+		]
+
+	def __str__(self):
+		return self.file_name
+
+	def delete(self, *args, **kwargs):
+		if self.file:
+			self.file.delete(save=False)
+		super().delete(*args, **kwargs)
 
 
 class OperationTags(models.Model):

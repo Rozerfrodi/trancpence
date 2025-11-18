@@ -7,9 +7,8 @@ router = DefaultRouter()
 router.register('auth/users', CustomUserViewSet, basename='user')
 
 urlpatterns = [
-	path('auth/', include('djoser.urls')),
 	re_path(r'^auth/', include('djoser.urls.authtoken')),
 	path('', include(router.urls)),
-	path('activate/<str:uid>/<str:token>/', activate_user_redirect, name='activate'),
+	# path('activate/<str:uid>/<str:token>/', activate_user_redirect, name='activate'),
 	path('download_example/', get_example_file, name='download_example'),
 ]
