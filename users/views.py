@@ -1,3 +1,7 @@
+from datetime import date
+
+from celery.bin.result import result
+from django.db.models import Count, Case, Sum, F, When, DecimalField
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from djoser.views import UserViewSet
@@ -7,6 +11,7 @@ from django.http import HttpResponse, HttpResponseNotFound, FileResponse
 from django.contrib.auth.tokens import default_token_generator
 from .models import *
 from users.serializers import *
+from rest_framework.viewsets import ViewSet
 import os
 import trancpence.settings as settings
 
@@ -18,7 +23,7 @@ def get_example_file(request):
 	return FileResponse(open(file_path, 'rb'), as_attachment=True, filename='example.xlsx')
 
 
-class CustomUserViewSet(UserViewSet):
+class CustomUserViewSet(UserViewSet, ViewSet):
 
 	@action(
 		detail=False,
@@ -81,3 +86,57 @@ class CustomUserViewSet(UserViewSet):
 		except (User.DoesNotExist, ValueError, TypeError, OverflowError):
 			return HttpResponseNotFound()
 
+	@action(methods=['get'], detail=False)
+	def stats(self, request):
+		user = request.user
+		bi = self.biggest_spending_month(user)
+		in_out = self.income_expenses(user)
+		return Response(
+			{
+				"added_files": self.added_files(user),
+				"incomes": in_out.get('total_incomes'),
+				"expenses": in_out.get('total_expenses'),
+				"most_valuable_category": self.most_valuable_category(user),
+				"biggest_spending_month": {
+						"year": bi.get('date__year'),
+						"month": date(bi.get('date__year'), bi.get('date__month'), 1).strftime("%b") + '.',
+						"total": bi.get('total'),
+				}
+			}
+		)
+
+	def added_files(self, user):
+		result = DataFile.objects.filter(user=user).aggregate(total=Count('id'))
+		return result['total'] or 0
+
+	def income_expenses(self, user):
+		result = UserInOutInfo.objects.filter(user=user).aggregate(
+			total_incomes=Sum(
+				Case(When(operation_type='income', then=F('amount')), default=0,
+				     output_field=DecimalField()
+				)
+			),
+			total_expenses=Sum(
+				Case(When(operation_type='expense', then=F('amount')), default=0,
+				     output_field=DecimalField()
+				)
+			)
+		)
+		return result or 0
+
+	def most_valuable_category(self, user):
+		result = (UserInOutInfo.objects.filter(user=user, operation_type='expense')
+		.values('tag__tag')
+		.annotate(
+			tag = F('tag__tag'),
+			total=Sum('amount'),
+		)).order_by('-total').values('tag', 'amount').first()
+		return result or 'no data'
+
+	def biggest_spending_month(self, user):
+		result = (UserInOutInfo.objects.filter(user=user, operation_type='expense')
+		.values('date__year', 'date__month')
+		.annotate(
+			total=Sum('amount'),
+		)).order_by('-total').first()
+		return result or 'no data'

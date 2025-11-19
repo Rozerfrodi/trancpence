@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 from pathlib import Path
-
+import sys
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'drf_api_logger',
     'drf_spectacular',
     'drf_dark_theme',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [
@@ -229,3 +230,22 @@ EMAIL_HOST_PASSWORD = 'cbaaxoiqyaogsixf'  # Пароль приложения, �
 # Дополнительные настройки
 DEFAULT_FROM_EMAIL = 'rostislavovvseslav@gmail.com'  # Email отправителя по умолчанию
 SERVER_EMAIL = 'rostislavovvseslav@gmail.com'  # Email для отправки ошибок сервера
+
+
+# celery_example/settings/celery.py
+
+
+# Детекция запущено ли сейчас тестирование
+TESTING = 'test' in sys.argv
+TESTING = TESTING or 'test_coverage' in sys.argv or 'pytest' in sys.modules
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
+
+CELERY = {
+    'broker_url': 'redis://localhost:6379/1',  # URL брокера сообщений
+    'task_always_eager': False,  # Синхронное выполнение задач при тестировании
+    'timezone': TIME_ZONE,  # Временная зона для планировщика
+    'result_backend': 'django-db',  # Закомментировано, но может быть использовано
+    'result_extended': True,
+    'task_track_started': True,
+}
