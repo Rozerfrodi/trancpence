@@ -1,17 +1,16 @@
 from datetime import date
-
-from celery.bin.result import result
 from django.db.models import Count, Case, Sum, F, When, DecimalField
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from djoser.views import UserViewSet
 from django.contrib.auth import get_user_model
 from djoser import utils
-from django.http import HttpResponse, HttpResponseNotFound, FileResponse
+from django.http import HttpResponse, HttpResponseNotFound, FileResponse, HttpResponseBadRequest
 from django.contrib.auth.tokens import default_token_generator
+from rest_framework.response import Response
 from .models import *
 from users.serializers import *
-from rest_framework.viewsets import ViewSet
+from rest_framework.viewsets import ViewSet, ModelViewSet
 import os
 import trancpence.settings as settings
 
@@ -86,6 +85,7 @@ class CustomUserViewSet(UserViewSet, ViewSet):
 		except (User.DoesNotExist, ValueError, TypeError, OverflowError):
 			return HttpResponseNotFound()
 
+
 	@action(methods=['get'], detail=False)
 	def stats(self, request):
 		user = request.user
@@ -140,3 +140,43 @@ class CustomUserViewSet(UserViewSet, ViewSet):
 			total=Sum('amount'),
 		)).order_by('-total').first()
 		return result or 'no data'
+
+class UserFileViewSet(ViewSet):
+	permission_classes = (IsAuthenticated,)
+
+	def add_file(self, request):
+		serializer = FileSerializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		validated_data = serializer.validated_data['file']
+
+		data = import_transaction(request.user, validated_data, False)
+
+		if data['status'] == 200 or data['status'] == 206:
+			return Response(data)
+
+	def list(self, request):
+		files = (
+			DataFile.objects.filter(user=request.user)
+			.annotate(total_ops=Count("file_link"))
+			.values("id", "file_name", "uploaded_at", "total_ops")
+		)
+
+		return Response({
+			"files": list(files),
+			"total_links": sum(f["total_ops"] for f in files)
+		})
+
+
+	def delete_file(self, request):
+		file_id = request.data.get('id')
+		if file_id and isinstance(file_id, list):
+			if DataFile.objects.filter(id__in=file_id).exists():
+				count = 0
+				for i in file_id:
+					DataFile.objects.get(id=i, user=request.user).delete()
+					count += 1
+				if count != len(file_id):
+					return HttpResponseBadRequest()
+				return Response({'status': 'success', 'message': f'{count} files was deleted'})
+			return Response({'status': 'error', 'message': f'file with id in {file_id} not found'})
+		return Response({'status': 'error', 'message': 'id field incorrect, need array with nums'})

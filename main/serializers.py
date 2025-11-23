@@ -1,5 +1,7 @@
 from django.db.models import CharField
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+
 from users.models import UserInOutInfo
 
 
@@ -18,6 +20,11 @@ class UserDataTagsSerializer(serializers.ModelSerializer):
 		return obj.amount
 
 class UserDataSerializer(serializers.Serializer):
-	date_start = serializers.DateField(required=False)
-	date_end = serializers.DateField(required=False)
-	tags = serializers.ListField(child=serializers.CharField(), allow_empty=True, required=False)
+	date_start = serializers.DateField(required=True)
+	date_end = serializers.DateField(required=True)
+	tags = serializers.ListField(child=serializers.CharField(), allow_empty=True, required=True)
+
+	def validate(self, attrs):
+		if attrs['date_start'] > attrs['date_end']:
+			raise ValidationError('date_start must be before date_end')
+		return attrs

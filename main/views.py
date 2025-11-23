@@ -6,7 +6,7 @@ from rest_framework_extensions.cache.mixins import CacheResponseMixin
 from django.db.models import F, Case, When, DecimalField
 from django.db.models.aggregates import *
 from django.shortcuts import redirect
-from rest_framework import viewsets
+from rest_framework.viewsets import ViewSet, ReadOnlyModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from main.serializers import *
@@ -19,7 +19,7 @@ def tpshka(request):
 		return redirect('swagger-ui')
 
 
-class OperationViewSet(viewsets.ReadOnlyModelViewSet):
+class OperationViewSet(ReadOnlyModelViewSet):
 	serializer_class = UserDataTagsSerializer
 	permission_classes = [IsAuthenticated]
 
@@ -31,8 +31,9 @@ class OperationViewSet(viewsets.ReadOnlyModelViewSet):
 			return UserInOutInfo.objects.filter(id=lookup_value)
 
 
-class GraphViewSet(CacheResponseMixin, viewsets.ViewSet):
+class GraphViewSet(ViewSet):
 	permission_classes = [IsAuthenticated]
+
 	def params(self, request, *args, **kwargs):
 		serializer = UserDataSerializer(data=request.data)
 		serializer.is_valid(raise_exception=True)
@@ -81,7 +82,7 @@ class GraphViewSet(CacheResponseMixin, viewsets.ViewSet):
 
 	def get_details(self, *args):
 		data = self.base_queryset(*args).values('id', 'operation_type', 'tag__svg', 'date', 'title',
-		    tags=F('tag__tag')).annotate(
+		                                        tags=F('tag__tag')).annotate(
 			total=Sum('amount'),
 		).order_by('date')
 		result = []
@@ -122,7 +123,7 @@ class GraphViewSet(CacheResponseMixin, viewsets.ViewSet):
 		).order_by('tag__tag')
 
 
-class GetTagsAPIView(viewsets.ViewSet):
+class GetTagsAPIView(ViewSet):
 	def list(self, request):
 		tags = OperationTags.objects.values_list('tag', flat=True)
 		return Response({'tags': list(tags)})

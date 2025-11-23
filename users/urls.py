@@ -9,6 +9,6 @@ router.register('auth/users', CustomUserViewSet, basename='user')
 urlpatterns = [
 	re_path(r'^auth/', include('djoser.urls.authtoken')),
 	path('', include(router.urls)),
-	# path('activate/<str:uid>/<str:token>/', activate_user_redirect, name='activate'),
+	path('users/files/', UserFileViewSet.as_view({'post': 'add_file', 'get':'list', 'delete':'delete_file'}), name='user_files'),
 	path('download_example/', get_example_file, name='download_example'),
 ]

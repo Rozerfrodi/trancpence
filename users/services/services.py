@@ -1,29 +1,28 @@
-import os
 from datetime import datetime
 import openpyxl
 from django.db import transaction
-from rest_framework import serializers, status
 from ..models import *
 
 
-def import_transaction(*args, **kwargs):
-	file = kwargs.get('file')
-	user = kwargs.get('user')
+def import_transaction(user, file, reg):
+	"""
+	func which processes table files
+	"""
 	tags = {t['tag']: t['id'] for t in OperationTags.objects.values('id', 'tag')}
 	row_count = ok_rows = 0
+	f = None
 	try:
 		if not file:
 			raise FileNotFoundError('File not found, please try again')
 		else:
-			DataFile.objects.create(file=file, user=user, file_name=file.name)
-		wb = openpyxl.load_workbook(file, read_only=True, data_only=True)
+			f = DataFile.objects.create(file=file, user=user, file_name=file.name)
+		wb = openpyxl.load_workbook(file.file, read_only=True, data_only=True)
 		sheet = wb.active
-
 		transactions_to_create = []
-		f = DataFile.objects.values('id').get(file_name=file.name, user=user)
 		for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, max_col=4, values_only=True):
 			row_count += 1
 			date, title, suma, tag = row
+
 			if not any(row):
 				continue
 
@@ -36,27 +35,28 @@ def import_transaction(*args, **kwargs):
 			if not tag_id:
 				continue
 
-			if len(title) > 40:
+			if not title or len(title) > 40:
 				continue
-			else:
-				title = title.strip()
 
-			transaction_obj = UserInOutInfo(
-				user=user,
-				date=transaction_date,
-				title=title,
-				operation_type='income' if suma > 0 else 'expense',
-				tag_id=tag_id,
-				amount=abs(suma) if suma < 0 else suma,
-				file_id=f.get('id'),
+			title = title.strip()
+
+			transactions_to_create.append(
+				UserInOutInfo(
+					user=user,
+					date=transaction_date,
+					title=title,
+					operation_type='income' if suma > 0 else 'expense',
+					tag_id=tag_id,
+					amount=abs(suma),
+					file_id=f.id,
+				)
 			)
 
-			transactions_to_create.append(transaction_obj)
+			ok_rows += 1
 
 		if transactions_to_create:
 			with transaction.atomic():
 				UserInOutInfo.objects.bulk_create(transactions_to_create)
-			ok_rows += 1
 
 		if ok_rows == row_count:
 			return {
@@ -71,5 +71,7 @@ def import_transaction(*args, **kwargs):
 			}
 
 	except Exception as e:
-		User.objects.filter(username=user.username).delete()
+		if reg:
+			User.objects.filter(username=user.username).delete()
+		DataFile.objects.filter(id=f.id).delete()
 		raise e

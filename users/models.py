@@ -1,5 +1,3 @@
-import os
-
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.text import slugify
@@ -14,7 +12,7 @@ class UserInOutInfo(models.Model):
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 	tag = models.ForeignKey('OperationTags', on_delete=models.SET_NULL, null=True, blank=True, default=1, related_name='tags', verbose_name='tag')
-	file = models.ForeignKey('DataFile', on_delete=models.CASCADE, null=True, blank=True)
+	file = models.ForeignKey('DataFile', on_delete=models.CASCADE, null=True, blank=True, related_name='file_link', verbose_name='file')
 
 	class Meta:
 		ordering = ['-date']
