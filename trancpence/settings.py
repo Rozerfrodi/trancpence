@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'drf_dark_theme',
     'django_celery_results',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -134,7 +135,7 @@ TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
-USE_TZ = False
+USE_TZ = True
 
 CACHES = {
     "default": {
@@ -232,18 +233,19 @@ DEFAULT_FROM_EMAIL = 'rostislavovvseslav@gmail.com'  # Email отправите�
 SERVER_EMAIL = 'rostislavovvseslav@gmail.com'  # Email для отправки ошибок сервера
 
 
-# celery_example/settings/celery.py
 
-
-# Детекция запущено ли сейчас тестирование
 TESTING = 'test' in sys.argv
 TESTING = TESTING or 'test_coverage' in sys.argv or 'pytest' in sys.modules
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
-CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
-
+CELERY_BROKER_URL = 'redis://localhost:6379/1'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
+CELERY_WORKER_POOL = 'prefork'  # или 'eventlet', 'gevent', 'threads'
+CELERY_WORKER_CONCURRENCY = 4
+if sys.platform == 'win32':
+    CELERY_WORKER_POOL = 'threads'
+    CELERY_WORKER_CONCURRENCY = 8
 CELERY = {
     'broker_url': 'redis://localhost:6379/1',  # URL брокера сообщений
-    'task_always_eager': False,  # Синхронное выполнение задач при тестировании
+    'task_always_eager': TESTING,  # Синхронное выполнение задач при тестировании
     'timezone': TIME_ZONE,  # Временная зона для планировщика
     'result_backend': 'django-db',  # Закомментировано, но может быть использовано
     'result_extended': True,

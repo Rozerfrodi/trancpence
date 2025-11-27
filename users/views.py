@@ -91,19 +91,30 @@ class CustomUserViewSet(UserViewSet, ViewSet):
 		user = request.user
 		bi = self.biggest_spending_month(user)
 		in_out = self.income_expenses(user)
-		return Response(
-			{
-				"added_files": self.added_files(user),
-				"incomes": in_out.get('total_incomes'),
-				"expenses": in_out.get('total_expenses'),
-				"most_valuable_category": self.most_valuable_category(user),
-				"biggest_spending_month": {
-						"year": bi.get('date__year'),
-						"month": date(bi.get('date__year'), bi.get('date__month'), 1).strftime("%b") + '.',
-						"total": bi.get('total'),
+		if not isinstance(bi, str):
+			return Response(
+				{
+					"added_files": self.added_files(user),
+					"incomes": in_out.get('total_incomes'),
+					"expenses": in_out.get('total_expenses'),
+					"most_valuable_category": self.most_valuable_category(user),
+					"biggest_spending_month": {
+							"year": bi.get('date__year'),
+							"month": date(bi.get('date__year'), bi.get('date__month'), 1).strftime("%b") + '.',
+							"total": bi.get('total'),
+					}
 				}
-			}
-		)
+			)
+		else:
+			return Response(
+				{
+					"added_files": self.added_files(user),
+					"incomes": in_out.get('total_incomes'),
+					"expenses": in_out.get('total_expenses'),
+					"most_valuable_category": self.most_valuable_category(user),
+					"biggest_spending_month": 'no data'
+				}
+			)
 
 	def added_files(self, user):
 		result = DataFile.objects.filter(user=user).aggregate(total=Count('id'))
