@@ -229,7 +229,7 @@ class UserFileViewSet(ViewSet):
         )
 
         return Response({
-            "files": list(files),
+            "file": list(files),
             "total_links": sum(f["total_ops"] for f in files)
         })
 
