@@ -140,7 +140,7 @@ USE_TZ = True
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/db0",
+        "LOCATION": "redis://127.0.0.1:6379/0",
     }
 }
 CACHE_TTL = 60 * 15
@@ -236,15 +236,15 @@ SERVER_EMAIL = 'rostislavovvseslav@gmail.com'  # Email для отправки �
 
 TESTING = 'test' in sys.argv
 TESTING = TESTING or 'test_coverage' in sys.argv or 'pytest' in sys.modules
-CELERY_BROKER_URL = 'redis://localhost:6379/1'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'django-db'
 CELERY_WORKER_POOL = 'prefork'  # или 'eventlet', 'gevent', 'threads'
-CELERY_WORKER_CONCURRENCY = 4
+CELERY_WORKER_CONCURRENCY = 12
 if sys.platform == 'win32':
     CELERY_WORKER_POOL = 'threads'
     CELERY_WORKER_CONCURRENCY = 8
 CELERY = {
-    'broker_url': 'redis://localhost:6379/1',  # URL брокера сообщений
+    'broker_url': 'redis://localhost:6379/0',  # URL брокера сообщений
     'task_always_eager': TESTING,  # Синхронное выполнение задач при тестировании
     'timezone': TIME_ZONE,  # Временная зона для планировщика
     'result_backend': 'django-db',  # Закомментировано, но может быть использовано

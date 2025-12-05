@@ -8,7 +8,7 @@ media/
 .env
 .env.prod
 .env.local
-
+.xlsx
 ### Virtual environment ###
 venv/
 env/
