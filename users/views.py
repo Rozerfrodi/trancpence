@@ -1,5 +1,6 @@
 from datetime import date
 from django.db.models import Count, Case, Sum, F, When, DecimalField
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from djoser.views import UserViewSet
@@ -21,6 +22,22 @@ def get_example_file(request):
 
 
 class CustomUserViewSet(UserViewSet, ViewSet):
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if instance == request.user:
+            utils.logout_user(self.request)
+        files_list = [i['id']for i in DataFile.objects.filter(user=instance).values('id')]
+        if DataFile.objects.filter(id__in=files_list).exists():
+            count = 0
+            for i in files_list:
+                DataFile.objects.get(id=i, user=request.user).delete()
+                count += 1
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=False,

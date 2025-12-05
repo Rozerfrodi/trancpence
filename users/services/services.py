@@ -12,10 +12,7 @@ def import_transaction(user, file, reg):
 	row_count = ok_rows = 0
 	f = None
 	try:
-		if not file:
-			raise FileNotFoundError('File not found, please try again')
-		else:
-			f = DataFile.objects.create(file=file, user=user, file_name=file.name)
+		f = DataFile.objects.create(file=file, user=user, file_name=file.name)
 		wb = openpyxl.load_workbook(file.file, read_only=True, data_only=True)
 		sheet = wb.active
 		transactions_to_create = []
