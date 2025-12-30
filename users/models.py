@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.utils.text import slugify
 
@@ -86,3 +87,32 @@ class OperationTags(models.Model):
 			self.slug = slugify(self.tag)
 			self.save()
 		super(OperationTags, self).save(*args, **kwargs)
+
+
+class UserActionLog(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	action_type = models.CharField(max_length=50, db_index=True)
+	action_svg = models.ForeignKey('UserLogSVG', on_delete=models.SET_NULL, null=True, blank=True,
+								   related_name='action_svg')
+	created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+	details = models.CharField(max_length=150, blank=True, default='')
+	class Meta:
+		ordering = ['-created_at']
+		indexes = [
+			models.Index(
+				fields=['user', 'created_at'],
+			)
+		]
+
+
+class UserLogSVG(models.Model):
+	svg = models.TextField(max_length=100, blank=True, default='', verbose_name='svg')
+	action_type = models.CharField(max_length=50, db_index=True)
+	action_color = models.CharField(max_length=50, blank=True, default='', verbose_name='action_color')
+	def __str__(self):
+		return self.action_type
+
+	class Meta:
+		verbose_name = 'Log SVG'
+		verbose_name_plural = 'Logs SVGs'
+		app_label = 'users'

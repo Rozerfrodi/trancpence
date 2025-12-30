@@ -240,6 +240,7 @@ CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_WORKER_POOL = 'prefork'  # или 'eventlet', 'gevent', 'threads'
 CELERY_WORKER_CONCURRENCY = 12
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 if sys.platform == 'win32':
     CELERY_WORKER_POOL = 'threads'
     CELERY_WORKER_CONCURRENCY = 8

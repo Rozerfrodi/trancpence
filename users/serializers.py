@@ -1,5 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+
 from .models import *
 from .services.services import import_transaction
 from djoser.serializers import UsernameSerializer, UserCreateSerializer
@@ -33,6 +35,10 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
 
 class FileSerializer(serializers.ModelSerializer):
+    file = serializers.ListField(
+        child=serializers.FileField(),
+        write_only=True
+    )
     class Meta:
         model = DataFile
         read_only_fields = ('file_name', 'uploaded_at')
@@ -40,9 +46,20 @@ class FileSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         file = attrs.get('file')
-        if file.size > 5 * 1024 * 1024:
-            raise serializers.ValidationError('File too big, > 5 mb')
+        for f in file:
+            if not f.name.endswith('.xlsx'):
+                raise serializers.ValidationError('File must be .xlsx file')
+            if f.size > 5 * 1024 * 1024:
+                raise serializers.ValidationError('File too big, > 5 mb')
         return attrs
+
+class UserLogsSerializer(serializers.ModelSerializer):
+    action_svg = serializers.CharField(source='action_svg.svg')
+    action_color = serializers.CharField(source='action_svg.action_color')
+    class Meta:
+        model = UserActionLog
+        fields = '__all__'
+
 
 
 class CustomSetUsernameSerializer(UsernameSerializer):
@@ -54,6 +71,7 @@ class CustomSetUsernameSerializer(UsernameSerializer):
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("This username already exists.")
         return value
+
 
 
 class CustomSetEmailSerializer(serializers.ModelSerializer):
@@ -71,3 +89,6 @@ class CustomSetEmailSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         attrs = super().validate(attrs)
         return attrs
+
+    def raise_error(self, errors):
+        raise ValidationError(errors)

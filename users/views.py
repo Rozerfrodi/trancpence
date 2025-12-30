@@ -9,6 +9,7 @@ from django.http import HttpResponse, HttpResponseNotFound, FileResponse, HttpRe
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework.response import Response
 from users.serializers import *
+from users.tasks import *
 from rest_framework.viewsets import ViewSet
 import os
 import trancpence.settings as settings
@@ -178,7 +179,8 @@ class CustomUserViewSet(UserViewSet, ViewSet):
         .values('date__year', 'date__month')
         .annotate(total_income=Sum(Case(
             When(operation_type='income', then=F('amount')), default=0,
-            output_field=DecimalField())), total_expense=Sum(Case(
+            output_field=DecimalField())),
+                  total_expense=Sum(Case(
             When(operation_type='expense', then=F('amount')), default=0,
             output_field=DecimalField()))
         )
@@ -214,11 +216,12 @@ class UserFileViewSet(ViewSet):
         serializer = FileSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data['file']
+        total = 0
+        for file in validated_data:
+            import_transaction(request.user, file, False)
+            total += 1
+        return Response({'message': f'{len(validated_data)} files was added\n{total} files was loaded'})
 
-        data = import_transaction(request.user, validated_data, False)
-
-        if data['status'] == 200 or data['status'] == 206:
-            return Response(data)
 
     @staticmethod
     def list(request):
@@ -244,6 +247,22 @@ class UserFileViewSet(ViewSet):
                     count += 1
                 if count != len(file_id):
                     return HttpResponseBadRequest()
-                return Response({'status': 'success', 'message': f'{count} files was deleted'})
-            return Response({'status': 'error', 'message': f'file with id in {file_id} not found'})
-        return Response({'status': 'error', 'message': 'id field incorrect, need array with nums'})
+                return Response({'status': status.HTTP_200_OK, 'message': f'{count} files was deleted'})
+        return Response({'status': status.HTTP_400_BAD_REQUEST, 'message': f'files cannot be deleted try again later'})
+
+
+class UserLogsViewSet(ViewSet):
+    permission_classes = (IsAuthenticated,)
+
+    @staticmethod
+    def list(request):
+        data = UserActionLog.objects.filter(user=request.user)
+        serializer = UserLogsSerializer(data, many=True)
+        return Response(serializer.data)
+
+    @staticmethod
+    def del_logs(request):
+        log_id = request.data.get('id')
+        if log_id and isinstance(log_id, list):
+            UserActionLog.objects.get(id__in=log_id, user=request.user).delete()
+        return Response({'status': status.HTTP_200_OK, 'message': 'logs was deleted'})

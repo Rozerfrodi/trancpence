@@ -5,9 +5,6 @@ from ..models import *
 
 
 def import_transaction(user, file, reg):
-	"""
-	func which processes table files
-	"""
 	tags = {t['tag']: t['id'] for t in OperationTags.objects.values('id', 'tag')}
 	row_count = ok_rows = 0
 	f = None
@@ -57,15 +54,9 @@ def import_transaction(user, file, reg):
 
 		if ok_rows == row_count:
 			return {
-				'status': 200,
-				'message': f'Successfully import file, load {ok_rows} rows'
+				'message': f'Successfully import {file.name}, load {ok_rows} operations'
 			}
 
-		else:
-			return {
-				'status': 206,
-				'message': f'Failed to import {row_count - ok_rows} rows, load {ok_rows} rows'
-			}
 
 	except Exception as e:
 		if reg:
