@@ -2,8 +2,9 @@ from django.contrib.auth import get_user_model
 from django.db.models.signals import *
 from django.dispatch import receiver
 from users.tasks import *
-
+from djoser.conf import settings
 User = get_user_model()
+
 
 # TODO сделать логирование входа/выхода
 
@@ -71,6 +72,44 @@ def file_deletes(sender, instance, **kwargs):
 
             if changes:
                 user_files_logs_task.delay(
+                    user_id=instance.user_id,
+                    changes=changes
+                )
+
+        except Exception as e:
+            print(e)
+
+
+@receiver(pre_delete, sender=settings.TOKEN_MODEL)
+def token_deletes(sender, instance, **kwargs):
+    if instance.pk:
+        try:
+            deleted_token = sender.objects.get(pk=instance.pk)
+            changes = {}
+            if deleted_token:
+                changes['detail'] = 'Logout'
+
+            if changes:
+                user_auth_logs_task(
+                    user_id=instance.user_id,
+                    changes=changes
+                )
+
+        except Exception as e:
+            print(e)
+
+
+@receiver(post_save, sender=settings.TOKEN_MODEL)
+def token_create(sender, instance, **kwargs):
+    if instance.pk:
+        try:
+            deleted_token = sender.objects.get(pk=instance.pk)
+            changes = {}
+            if deleted_token:
+                changes['detail'] = 'Login'
+
+            if changes:
+                user_auth_logs_task(
                     user_id=instance.user_id,
                     changes=changes
                 )

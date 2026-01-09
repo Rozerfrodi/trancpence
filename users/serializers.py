@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
-from rest_framework import serializers
+from rest_framework import serializers, viewsets
 from rest_framework.exceptions import ValidationError
-
+import re
+from main.serializers import UserDataSerializer
 from .models import *
 from .services.services import import_transaction
 from djoser.serializers import UsernameSerializer, UserCreateSerializer
@@ -54,12 +55,17 @@ class FileSerializer(serializers.ModelSerializer):
         return attrs
 
 class UserLogsSerializer(serializers.ModelSerializer):
-    action_svg = serializers.CharField(source='action_svg.svg')
-    action_color = serializers.CharField(source='action_svg.action_color')
+    action_svg = serializers.CharField(source='action_svg.svg', read_only=True)
+    action_color = serializers.CharField(source='action_svg.action_color', read_only=True)
+
     class Meta:
         model = UserActionLog
         fields = '__all__'
 
+    def validate(self, attrs):
+        if attrs['date_start'] > attrs['date_end']:
+            raise ValidationError('date_start must be before date_end')
+        return attrs
 
 
 class CustomSetUsernameSerializer(UsernameSerializer):
@@ -92,3 +98,42 @@ class CustomSetEmailSerializer(serializers.ModelSerializer):
 
     def raise_error(self, errors):
         raise ValidationError(errors)
+
+
+class CompareSerializer(serializers.Serializer):
+    first_year = serializers.CharField(write_only=True, required=False)
+    second_year = serializers.CharField(write_only=True, required=False)
+
+    first_month = serializers.CharField(write_only=True, required=False)
+    second_month = serializers.CharField(write_only=True, required=False)
+
+    def validate(self, value):
+        pattern_year = r'^\d{4}$'
+        pattern_month = r'^\d{4}-\d{1,2}$'
+        pattern_type = None
+        for k, v in value.items():
+            if k.endswith('year'):
+                if not re.match(pattern_year, v):
+                    raise serializers.ValidationError('year must be in format YYYY')
+                pattern_type = 'yearly'
+            elif k.endswith('month'):
+                if not re.match(pattern_month, v):
+                    raise serializers.ValidationError('date must be in format YYYY-MM')
+                pattern_type = 'monthly'
+            else:
+                raise serializers.ValidationError('incorrect date format')
+
+        if pattern_type == 'yearly':
+            value['first_year'] = int(value['first_year'])
+            value['second_year'] = int(value['second_year'])
+            value['comp_type'] = pattern_type
+            if value['first_year'] == value['second_year']:
+                raise serializers.ValidationError('period must be different')
+        elif pattern_type == 'monthly':
+            value['first_month'] = {['year', 'month'][i]: list(map(int,(value['first_month'].split('-'))))[i] for i in range(2)}
+            value['second_month'] = {['year', 'month'][i]: list(map(int,(value['second_month'].split('-'))))[i] for i in range(2)}
+            value['comp_type'] = pattern_type
+            if value['first_month']['month'] == value['second_month']['month']:
+                raise serializers.ValidationError('year must be different')
+
+        return value

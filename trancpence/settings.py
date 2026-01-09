@@ -243,7 +243,7 @@ CELERY_WORKER_CONCURRENCY = 12
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 if sys.platform == 'win32':
     CELERY_WORKER_POOL = 'threads'
-    CELERY_WORKER_CONCURRENCY = 8
+    CELERY_WORKER_CONCURRENCY = 16
 CELERY = {
     'broker_url': 'redis://localhost:6379/0',  # URL брокера сообщений
     'task_always_eager': TESTING,  # Синхронное выполнение задач при тестировании

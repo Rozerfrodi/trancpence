@@ -15,7 +15,7 @@ import os
 import trancpence.settings as settings
 
 User = get_user_model()
-
+year = date.today().year
 
 def get_example_file(request):
     file_path = os.path.join(settings.BASE_DIR, 'files', 'example.xlsx')
@@ -173,7 +173,6 @@ class CustomUserViewSet(UserViewSet, ViewSet):
     @action(methods=['get'], detail=False)
     def get_usergraph(self, request):
         user = request.user
-        year = date.today().year
         result = (UserInOutInfo.objects
         .filter(user=user, date__year=year)
         .values('date__year', 'date__month')
@@ -220,7 +219,7 @@ class UserFileViewSet(ViewSet):
         for file in validated_data:
             import_transaction(request.user, file, False)
             total += 1
-        return Response({'message': f'{len(validated_data)} files was added\n{total} files was loaded'})
+        return Response({'message': f'{len(validated_data)} files was added {total} files was loaded'})
 
 
     @staticmethod
@@ -254,15 +253,42 @@ class UserFileViewSet(ViewSet):
 class UserLogsViewSet(ViewSet):
     permission_classes = (IsAuthenticated,)
 
+
     @staticmethod
     def list(request):
-        data = UserActionLog.objects.filter(user=request.user)
-        serializer = UserLogsSerializer(data, many=True)
-        return Response(serializer.data)
+        data = show_user_logs_task.delay(request.user.id, 'get')
+        return Response(data.get(timeout=30))
+
+    @staticmethod
+    def post(request):
+        serializer = UserDataSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        date_start = serializer.validated_data.get('date_start')
+        date_end = serializer.validated_data.get('date_end')
+        tags = serializer.validated_data.get('tags')
+        data = show_user_logs_task.delay(request.user.id, 'post', {'from': date_start, 'to': date_end}, tags)
+        return Response(data.get(timeout=30))
 
     @staticmethod
     def del_logs(request):
-        log_id = request.data.get('id')
-        if log_id and isinstance(log_id, list):
-            UserActionLog.objects.get(id__in=log_id, user=request.user).delete()
-        return Response({'status': status.HTTP_200_OK, 'message': 'logs was deleted'})
+        user_id = request.user.id
+        if user_id:
+            UserActionLog.objects.filter(user_id=user_id, user=request.user).delete()
+            return Response({'status': status.HTTP_200_OK, 'message': 'logs was deleted'})
+        return Response({'status': status.HTTP_400_BAD_REQUEST, 'message': 'Something went wrong, try again later'})
+
+
+class CompareViewSet(ViewSet):
+    permission_classes = (IsAuthenticated,)
+
+    @staticmethod
+    def post(request):
+        serializer = CompareSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        comp_type = serializer.validated_data.pop('comp_type')
+        data = None
+        if comp_type == 'yearly':
+            data = compare_year_logic_task.delay(request.user.id, serializer.validated_data)
+        if comp_type == 'monthly':
+            data = compare_month_logic_task.delay(request.user.id, serializer.validated_data)
+        return Response(data.get(timeout=50))

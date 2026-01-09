@@ -3,7 +3,7 @@ from users.models import *
 
 @admin.register(UserInOutInfo)
 class UserInOutInfoAdmin(admin.ModelAdmin):
-	list_display = ('id', 'updated_at', 'date', 'user', 'operation_type', 'amount', 'tag')
+	list_display = ('id', 'date', 'user', 'operation_type', 'amount', 'tag')
 	search_fields = ('id', 'date', 'user__username', 'operation_type', 'amount', 'tag__tag')
 	preserve_filters = True
 	search_help_text = 'write: id, date, username, operation_type, amount, tag'
