@@ -8,6 +8,7 @@ from djoser import utils
 from django.http import HttpResponse, HttpResponseNotFound, FileResponse, HttpResponseBadRequest
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from users.serializers import *
 from users.tasks import *
 from rest_framework.viewsets import ViewSet
@@ -288,7 +289,37 @@ class CompareViewSet(ViewSet):
         comp_type = serializer.validated_data.pop('comp_type')
         data = None
         if comp_type == 'yearly':
-            data = compare_year_logic_task.delay(request.user.id, serializer.validated_data)
-        if comp_type == 'monthly':
-            data = compare_month_logic_task.delay(request.user.id, serializer.validated_data)
-        return Response(data.get(timeout=50))
+            task = compare_year_logic_task.delay(request.user.id, serializer.validated_data)
+        elif comp_type == 'monthly':
+            task = compare_month_logic_task.delay(request.user.id, serializer.validated_data)
+        else:
+            return Response({'error': 'Invalid comp_type'}, status=400)
+
+        return Response({
+            'status': 'processing',
+            'task_id': task.id,
+            'check_url': f'/api/tasks/{task.id}/status/'
+        }, status=202)
+
+
+class TaskStatusView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, task_id):
+        from celery.result import AsyncResult
+
+        task_result = AsyncResult(task_id)
+
+        response_data = {
+            'task_id': task_id,
+            'status': task_result.status,
+            'ready': task_result.ready()
+        }
+
+        if task_result.ready():
+            if task_result.successful():
+                response_data['result'] = task_result.result
+            else:
+                response_data['error'] = str(task_result.result)
+
+        return Response(response_data)

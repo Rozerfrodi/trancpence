@@ -6,7 +6,6 @@ from djoser.conf import settings
 User = get_user_model()
 
 
-# TODO сделать логирование входа/выхода
 
 @receiver(pre_save, sender=User)
 def user_changes(sender, instance, **kwargs):

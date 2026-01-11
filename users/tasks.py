@@ -6,7 +6,7 @@ from users.services.compare_mesage import get_stability_advice
 from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.db import connection
-from django.db.models import Case, When, DecimalField, F, CharField, Sum, StdDev, Q
+from django.db.models import Case, When, DecimalField, F, CharField, Sum, StdDev, Q, Avg
 from django.db.models.functions import Round, Coalesce
 from calendar import monthrange
 from users.models import *
@@ -136,13 +136,13 @@ def year_stats_func(user, periods):
         ).aggregate(
             total_incomes=Round(Coalesce(
                 Sum('amount', filter=Q(operation_type='income')),
-                DecimalField('0.00')
+                Decimal('0.00')
             ),
                 2
             ),
             total_expenses=Round(Coalesce(
                 Sum('amount', filter=Q(operation_type='expense')),
-                DecimalField('0.00')
+                Decimal('0.00')
             ),
                 2
             ),
@@ -176,13 +176,13 @@ def month_stats_func(user, periods):
         ).aggregate(
             total_incomes=Round(Coalesce(
                 Sum('amount', filter=Q(operation_type='income')),
-                DecimalField('0.00')
+                Decimal('0.00')
             ),
                 2
             ),
             total_expenses=Round(Coalesce(
                 Sum('amount', filter=Q(operation_type='expense')),
-                DecimalField('0.00')
+                Decimal('0.00')
             ),
                 2
             ),
@@ -198,18 +198,11 @@ def month_stats_func(user, periods):
             date__month=date['month'],
         ).values('date__year', 'tag__tag').annotate(
             top_tag=Sum(
-                Case(When(operation_type='expense', then=F('amount')), default=0,
+                Case(When(operation_type='expense', then=F('amount')), default=None,
                      output_field=DecimalField()
                      )
             ),
         ).values('tag__tag', 'top_tag').order_by('-top_tag').first()
-        answer[f'{step}_days_avg'] = UserInOutInfo.objects.filter(
-            user=user,
-            date__year=date['year'],
-            date__month=date['month'],
-        ).values('date__day').annotate(
-            #TODO Доделать
-        )
     return answer
 
 def my_round(example):
@@ -291,27 +284,33 @@ def compare_month_logic_task(user_id, periods):
 
         for step in range(2):
             step = 'first' if step == 0 else 'second'
+            days = f_day_count if step == 'first' else s_day_count
 
             month_exp = data_month.get(f'{step}_data_month').get('total_expenses', 0)
             month_inc = data_month.get(f'{step}_data_month').get('total_incomes', 0)
-            avg_stddev = data_month.get(f'{step}_data_month').get('avg_stddev', 0)
             top_tag = data_month.get(f'{step}_tag_top_month').get('tag__tag', 'N/A')
-            days = f_day_count if step == 'first' else s_day_count
+
+            avg_stddev = data_month.get(f'{step}_data_month').get('avg_stddev', 0)
+            avg_day_incomes = month_inc / days
+            avg_day_expenses = month_exp / days
+            avg_monthly_saving = month_inc - month_exp
 
             finally_answer[f'{step}_month_stats'] = \
                 {
+                    'top_tag': top_tag,
                     'total_incomes': month_inc,
                     'total_expenses': month_exp,
-                    'top_tag': top_tag,
-                    'net_profit': my_round(month_inc - month_exp),
+                    'net_month_profit': my_round(month_inc - month_exp),
+                    'net_day_profit': my_round(avg_day_incomes - avg_day_expenses),
                     'inc_exp_ratio': my_round(month_exp / month_inc) if month_exp is not None else 0,
+                    'exp_ratio': my_round((avg_day_expenses * days) / (avg_day_incomes * days) * 100)
                 }
 
             finally_answer[f'{step}_avg_month_stats'] = \
                 {
-                    'avg_monthly_incomes': my_round(month_inc / days),
-                    'avg_monthly_expenses': my_round(month_exp / days),
-                    'avg_monthly_saving': my_round((month_inc - month_exp) / days),
+                    'avg_day_incomes': my_round(avg_day_incomes),
+                    'avg_day_expenses': my_round(avg_day_expenses),
+                    'avg_monthly_saving': my_round(avg_monthly_saving),
                     'avg_stddev': my_round(avg_stddev) if avg_stddev is not None else 0,
                 }
 
