@@ -6,7 +6,6 @@ from djoser.conf import settings
 User = get_user_model()
 
 
-
 @receiver(pre_save, sender=User)
 def user_changes(sender, instance, **kwargs):
     if instance.pk:
@@ -37,7 +36,6 @@ def user_changes(sender, instance, **kwargs):
 
         except User.DoesNotExist:
             pass
-
 
 @receiver(post_save, sender=DataFile)
 def files_changes(sender, instance, **kwargs):
@@ -115,3 +113,8 @@ def token_create(sender, instance, **kwargs):
 
         except Exception as e:
             print(e)
+
+@receiver(post_save, sender=User)
+def create_user_settings(sender, instance, created, **kwargs):
+    if created:
+        UserSettings.objects.create(user=instance)

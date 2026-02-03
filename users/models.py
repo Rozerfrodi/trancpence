@@ -5,113 +5,138 @@ from django.utils.text import slugify
 
 
 class UserInOutInfo(models.Model):
-	user = models.ForeignKey(User, on_delete=models.CASCADE)
-	date = models.DateField(auto_now=False, auto_now_add=False, verbose_name='operation date')
-	title = models.CharField(max_length=100)
-	operation_type = models.CharField(max_length=10, choices=(('income', 'income'), ('expense', 'expense')))
-	amount = models.DecimalField(max_digits=10, decimal_places=2)
-	created_at = models.DateTimeField(auto_now_add=True)
-	tag = models.ForeignKey('OperationTags', on_delete=models.SET_NULL, null=True, blank=True, default=1, related_name='tags', verbose_name='tag')
-	file = models.ForeignKey('DataFile', on_delete=models.CASCADE, null=True, blank=True, related_name='file_link', verbose_name='file')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateField(auto_now=False, auto_now_add=False, verbose_name='operation date')
+    title = models.CharField(max_length=100)
+    operation_type = models.CharField(max_length=10, choices=(('income', 'income'), ('expense', 'expense')))
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    tag = models.ForeignKey('OperationTags', on_delete=models.SET_NULL, null=True, blank=True, default=1,
+                            related_name='tags', verbose_name='tag')
+    file = models.ForeignKey('DataFile', on_delete=models.CASCADE, null=True, blank=True, related_name='file_link',
+                             verbose_name='file')
 
-	class Meta:
-		ordering = ['-date']
-		verbose_name = 'User In-Out'
-		verbose_name_plural = 'Users In-Out'
-		app_label = 'users'
-		indexes = [
-			models.Index(
-				fields=['user', 'date'],
-			),
-			models.Index(
-				fields=['user', 'tag'],
-			),
-			models.Index(
-				fields=['user', 'file'],
-			)
-		]
+    class Meta:
+        ordering = ['-date']
+        verbose_name = 'User In-Out'
+        verbose_name_plural = 'Users In-Out'
+        app_label = 'users'
+        indexes = [
+            models.Index(
+                fields=['user', 'date'],
+            ),
+            models.Index(
+                fields=['user', 'tag'],
+            ),
+            models.Index(
+                fields=['user', 'file'],
+            )
+        ]
 
-	def __str__(self):
-		return self.title
+    def __str__(self):
+        return self.title
 
 
 class DataFile(models.Model):
-	user = models.ForeignKey(User, on_delete=models.CASCADE)
-	file = models.FileField(upload_to='temp_files/', verbose_name='file')
-	file_name = models.CharField(max_length=100, verbose_name='file_name')
-	uploaded_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    file = models.FileField(upload_to='temp_files/', verbose_name='file')
+    file_name = models.CharField(max_length=100, verbose_name='file_name')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
 
-	class Meta:
-		ordering = ['-uploaded_at']
-		verbose_name = 'Data File'
-		verbose_name_plural = 'Data Files'
-		app_label = 'users'
-		indexes = [
-			models.Index(
-				fields=['user', 'file_name'],
-			),
-			models.Index(
-				fields=['file', 'file_name'],
-			)
-		]
+    class Meta:
+        ordering = ['-uploaded_at']
+        verbose_name = 'Data File'
+        verbose_name_plural = 'Data Files'
+        app_label = 'users'
+        indexes = [
+            models.Index(
+                fields=['user', 'file_name'],
+            ),
+            models.Index(
+                fields=['file', 'file_name'],
+            )
+        ]
 
-	def __str__(self):
-		return self.file_name
+    def __str__(self):
+        return self.file_name
 
-	def delete(self, *args, **kwargs):
-		if self.file:
-			self.file.delete(save=False)
-		super().delete(*args, **kwargs)
+    def delete(self, *args, **kwargs):
+        if self.file:
+            self.file.delete(save=False)
+        super().delete(*args, **kwargs)
 
 
 class OperationTags(models.Model):
-	tag = models.CharField(max_length=100, unique=True, verbose_name='tag')
-	slug = models.SlugField(max_length=100, unique=True, verbose_name='slug')
-	svg = models.TextField(max_length=100, blank=True, default='', verbose_name='svg')
+    tag = models.CharField(max_length=100, unique=True, verbose_name='tag')
+    slug = models.SlugField(max_length=100, unique=True, verbose_name='slug')
+    svg = models.TextField(max_length=100, blank=True, default='', verbose_name='svg')
 
-	def __str__(self):
-		return self.tag
+    def __str__(self):
+        return self.tag
 
-	class Meta:
-		ordering = ['-tag']
-		verbose_name = 'Operation Tag'
-		verbose_name_plural = 'Operation Tags'
-		app_label = 'users'
+    class Meta:
+        ordering = ['-tag']
+        verbose_name = 'Operation Tag'
+        verbose_name_plural = 'Operation Tags'
+        app_label = 'users'
 
-	def save(self, *args, **kwargs):
-		if self.pk and self.tag != self.objects.get(pk=self.pk).tag:
-			self.slug = slugify(self.tag)
+    def save(self, *args, **kwargs):
+        if self.pk and self.tag != self.objects.get(pk=self.pk).tag:
+            self.slug = slugify(self.tag)
 
-		if not self.slug:
-			self.slug = slugify(self.tag)
-			self.save()
-		super(OperationTags, self).save(*args, **kwargs)
+        if not self.slug:
+            self.slug = slugify(self.tag)
+            self.save()
+        super(OperationTags, self).save(*args, **kwargs)
+
+
+class Currency(models.Model):
+    currency = models.CharField(max_length=4, unique=True, verbose_name='currency')
+    rate = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='rate')
+
+    def __str__(self):
+        return self.currency
+
+
+class UserSettings(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user_currency = models.ForeignKey('Currency', null=True, blank=True, default=1, on_delete=models.SET_NULL)
+
+
+    class Meta:
+        verbose_name = 'User Setting'
+        verbose_name_plural = 'User Settings'
+
+    def __str__(self):
+        return self.user
 
 
 class UserActionLog(models.Model):
-	user = models.ForeignKey(User, on_delete=models.CASCADE)
-	action_type = models.CharField(max_length=50, db_index=True)
-	action_svg = models.ForeignKey('UserLogSVG', on_delete=models.SET_NULL, null=True, blank=True,
-								   related_name='action_svg')
-	created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-	details = models.CharField(max_length=150, blank=True, default='')
-	class Meta:
-		ordering = ['-created_at']
-		indexes = [
-			models.Index(
-				fields=['user', 'created_at'],
-			)
-		]
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    action_type = models.CharField(max_length=50, db_index=True)
+    action_svg = models.ForeignKey('UserLogSVG', on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='action_svg')
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    details = models.CharField(max_length=150, blank=True, default='')
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(
+                fields=['user', 'created_at'],
+            )
+        ]
 
 
 class UserLogSVG(models.Model):
-	svg = models.TextField(max_length=100, blank=True, default='', verbose_name='svg')
-	action_type = models.CharField(max_length=50, db_index=True)
-	action_color = models.CharField(max_length=50, blank=True, default='', verbose_name='action_color')
-	def __str__(self):
-		return self.action_type
+    svg = models.TextField(max_length=100, blank=True, default='', verbose_name='svg')
+    action_type = models.CharField(max_length=50, db_index=True)
+    action_color = models.CharField(max_length=50, blank=True, default='', verbose_name='action_color')
 
-	class Meta:
-		verbose_name = 'Log SVG'
-		verbose_name_plural = 'Logs SVGs'
-		app_label = 'users'
+    def __str__(self):
+        return self.action_type
+
+    class Meta:
+        verbose_name = 'Log SVG'
+        verbose_name_plural = 'Logs SVGs'
+        app_label = 'users'

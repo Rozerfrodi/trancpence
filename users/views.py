@@ -1,6 +1,7 @@
 from datetime import date
 from django.db.models import Count, Case, Sum, F, When, DecimalField
 from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from djoser.views import UserViewSet
@@ -18,6 +19,7 @@ import trancpence.settings as settings
 User = get_user_model()
 year = date.today().year
 
+
 def get_example_file(request):
     file_path = os.path.join(settings.BASE_DIR, 'files', 'example.xlsx')
     return FileResponse(open(file_path, 'rb'), as_attachment=True, filename='example.xlsx')
@@ -32,7 +34,7 @@ class CustomUserViewSet(UserViewSet, ViewSet):
 
         if instance == request.user:
             utils.logout_user(self.request)
-        files_list = [i['id']for i in DataFile.objects.filter(user=instance).values('id')]
+        files_list = [i['id'] for i in DataFile.objects.filter(user=instance).values('id')]
         if DataFile.objects.filter(id__in=files_list).exists():
             count = 0
             for i in files_list:
@@ -180,9 +182,9 @@ class CustomUserViewSet(UserViewSet, ViewSet):
         .annotate(total_income=Sum(Case(
             When(operation_type='income', then=F('amount')), default=0,
             output_field=DecimalField())),
-                  total_expense=Sum(Case(
-            When(operation_type='expense', then=F('amount')), default=0,
-            output_field=DecimalField()))
+            total_expense=Sum(Case(
+                When(operation_type='expense', then=F('amount')), default=0,
+                output_field=DecimalField()))
         )
         ).order_by('date__year', 'date__month')
         result_list = list(result)
@@ -222,7 +224,6 @@ class UserFileViewSet(ViewSet):
             total += 1
         return Response({'message': f'{len(validated_data)} files was added {total} files was loaded'})
 
-
     @staticmethod
     def list(request):
         files = (
@@ -253,7 +254,6 @@ class UserFileViewSet(ViewSet):
 
 class UserLogsViewSet(ViewSet):
     permission_classes = (IsAuthenticated,)
-
 
     @staticmethod
     def list(request):
@@ -287,13 +287,12 @@ class CompareViewSet(ViewSet):
         serializer = CompareSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         comp_type = serializer.validated_data.pop('comp_type')
-        data = None
         if comp_type == 'yearly':
             task = compare_year_logic_task.delay(request.user.id, serializer.validated_data)
         elif comp_type == 'monthly':
             task = compare_month_logic_task.delay(request.user.id, serializer.validated_data)
         else:
-            return Response({'error': 'Invalid comp_type'}, status=400)
+            return HttpResponseBadRequest()
 
         return Response({
             'status': 'processing',
@@ -305,7 +304,8 @@ class CompareViewSet(ViewSet):
 class TaskStatusView(APIView):
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request, task_id):
+    @staticmethod
+    def get(request, task_id):
         from celery.result import AsyncResult
 
         task_result = AsyncResult(task_id)
@@ -323,3 +323,18 @@ class TaskStatusView(APIView):
                 response_data['error'] = str(task_result.result)
 
         return Response(response_data)
+
+
+class GetCurrencyAPIView(ViewSet):
+    permission_classes = (IsAuthenticated,)
+
+    def list(self, request):
+        tags = Currency.objects.values_list('currency', flat=True)
+        return Response({'currency': list(tags)})
+
+    def set_sett(self, request):
+        currency_set = Currency.objects.filter(currency=request.data.get('currency')).values_list('id', flat=True).first()
+        if not currency_set:
+            return Response({'status': status.HTTP_400_BAD_REQUEST, 'message': 'Currency does not exist'})
+        UserSettings.objects.filter(user=request.user).update(user_currency=currency_set)
+        return Response({'status': status.HTTP_200_OK})

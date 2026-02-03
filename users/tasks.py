@@ -1,12 +1,10 @@
 from datetime import datetime
-from calendar import month
 from decimal import Decimal
-from pyexpat.errors import messages
 from users.services.compare_mesage import get_stability_advice
 from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.db import connection
-from django.db.models import Case, When, DecimalField, F, CharField, Sum, StdDev, Q, Avg
+from django.db.models import Case, When, DecimalField, F, Sum, StdDev, Q
 from django.db.models.functions import Round, Coalesce
 from calendar import monthrange
 from users.models import *
@@ -39,7 +37,7 @@ def user_changes_logs_task(user_id, changes):
                     action_svg_id=1,
                     details=f"Username changed from {change_data['old']} to {change_data['new']}",
                 )
-            elif field == 'eyearmail':
+            elif field == 'email':
                 UserActionLog.objects.create(
                     user=user,
                     action_type='Change',
@@ -209,7 +207,7 @@ def my_round(example):
     example = example.quantize(Decimal('0.01'))
     return example
 
-@shared_task
+@shared_task(name='year_stats')
 def compare_year_logic_task(user_id, periods):
     first_year = periods['first_year']
     second_year = periods['second_year']
@@ -267,7 +265,8 @@ def compare_year_logic_task(user_id, periods):
     except User.DoesNotExist:
         return []
 
-@shared_task
+
+@shared_task(name='month_stats')
 def compare_month_logic_task(user_id, periods):
     first_month = periods['first_month']
     second_month = periods['second_month']

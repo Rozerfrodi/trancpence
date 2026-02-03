@@ -100,6 +100,10 @@ class CustomSetEmailSerializer(serializers.ModelSerializer):
         raise ValidationError(errors)
 
 
+class CurrencySettingsSerializer(serializers.Serializer):
+    currency = serializers.CharField(max_length=10)
+
+
 class CompareSerializer(serializers.Serializer):
     first_year = serializers.CharField(write_only=True, required=False)
     second_year = serializers.CharField(write_only=True, required=False)

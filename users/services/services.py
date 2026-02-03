@@ -60,6 +60,8 @@ def import_transaction(user, file, reg):
 
 	except Exception as e:
 		if reg:
+			UserSettings.objects.filter(user=user).delete()
+			UserActionLog.objects.filter(user=user).delete()
 			User.objects.filter(username=user.username).delete()
 		DataFile.objects.filter(id=f.id).delete()
 		raise e

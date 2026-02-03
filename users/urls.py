@@ -13,4 +13,5 @@ urlpatterns = [
 	path('compare/', CompareViewSet.as_view({'post': 'post'}), name='compare'),
 	path('download_example/', get_example_file, name='download_example'),
 	path('api/tasks/<uuid:task_id>/status/', TaskStatusView.as_view(), name='task_status'),
+	path('currency/', GetCurrencyAPIView.as_view({'get':'list', 'post':'set_sett'}), name='currency'),
 ]
