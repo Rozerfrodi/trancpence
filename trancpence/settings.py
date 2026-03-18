@@ -9,16 +9,18 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+import os
 from pathlib import Path
+from dotenv import load_dotenv, dotenv_values
 import sys
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+config = dotenv_values('my.env')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-5y(nbq07fa!t$px(y!1#a!&!p^qj#_3b(1kmm*r84s@gz_o9zi'
+SECRET_KEY = config.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -49,6 +51,7 @@ INSTALLED_APPS = [
     'drf_dark_theme',
     'django_celery_results',
     'django_celery_beat',
+    'django_mysql'
 ]
 
 MIDDLEWARE = [
@@ -93,7 +96,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'trancpencebd',
         'USER': 'root',
-        'PASSWORD': '(Andromeda_22)',
+        'PASSWORD': config.get('DB_PASSWORD'),
         'HOST': 'localhost',
         'PORT': '3306',
         'CONN_MAX_AGE': 300,
@@ -102,7 +105,7 @@ DATABASES = {
         },
         'OPTIONS': {
             'charset': 'utf8mb4',
-            'connect_timeout': 30
+            'connect_timeout': 30,
         }
     }
 }
@@ -225,12 +228,12 @@ EMAIL_USE_SSL = False
 
 
 # Ваши учетные данные Gmail
-EMAIL_HOST_USER = 'rostislavovvseslav@gmail.com'  # Замените на ваш Gmail
-EMAIL_HOST_PASSWORD = 'cbaaxoiqyaogsixf'  # Пароль приложения, не обычный пароль!
+EMAIL_HOST_USER = config.get('EMAIL_HOST_USER')  # Замените на ваш Gmail
+EMAIL_HOST_PASSWORD = config.get('EMAIL_HOST_PASSWORD')  # Пароль приложения, не обычный пароль!
 
 # Дополнительные настройки
-DEFAULT_FROM_EMAIL = 'rostislavovvseslav@gmail.com'  # Email отправителя по умолчанию
-SERVER_EMAIL = 'rostislavovvseslav@gmail.com'  # Email для отправки ошибок сервера
+DEFAULT_FROM_EMAIL = config.get('EMAIL_HOST_USER')  # Email отправителя по умолчанию
+SERVER_EMAIL = config.get('EMAIL_HOST_USER')  # Email для отправки ошибок сервера
 
 
 

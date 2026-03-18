@@ -30,6 +30,10 @@ class UserInOutInfo(models.Model):
             ),
             models.Index(
                 fields=['user', 'file'],
+            ),
+            models.Index(
+                fields=['title'],
+                name='title_idx',
             )
         ]
 
@@ -79,6 +83,11 @@ class OperationTags(models.Model):
         verbose_name = 'Operation Tag'
         verbose_name_plural = 'Operation Tags'
         app_label = 'users'
+        indexes = [
+            models.Index(
+                fields=['tag'],
+            )
+        ]
 
     def save(self, *args, **kwargs):
         if self.pk and self.tag != self.objects.get(pk=self.pk).tag:
