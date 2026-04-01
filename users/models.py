@@ -17,23 +17,14 @@ class UserInOutInfo(models.Model):
                              verbose_name='file')
 
     class Meta:
+        db_table = 'Users_Operations'
         ordering = ['-date']
         verbose_name = 'User In-Out'
         verbose_name_plural = 'Users In-Out'
         app_label = 'users'
         indexes = [
             models.Index(
-                fields=['user', 'date'],
-            ),
-            models.Index(
-                fields=['user', 'tag'],
-            ),
-            models.Index(
-                fields=['user', 'file'],
-            ),
-            models.Index(
-                fields=['title'],
-                name='title_idx',
+                fields=['title']
             )
         ]
 

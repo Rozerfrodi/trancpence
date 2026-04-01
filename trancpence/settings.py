@@ -51,7 +51,8 @@ INSTALLED_APPS = [
     'drf_dark_theme',
     'django_celery_results',
     'django_celery_beat',
-    'django_mysql'
+    'django_mysql',
+    'loan.apps.LoanConfig'
 ]
 
 MIDDLEWARE = [

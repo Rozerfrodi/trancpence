@@ -22,14 +22,14 @@ class UserDataTagsSerializer(serializers.ModelSerializer):
 
 
 class UserDataSerializer(serializers.Serializer):
-    date_start = serializers.DateField(required=True)
-    date_end = serializers.DateField(required=True)
-    tags = serializers.ListField(child=serializers.CharField(), allow_empty=True, required=True)
-    q = serializers.CharField(required=False, allow_blank=True)
-    op_type = serializers.ListField(child=serializers.CharField(), allow_empty=True, required=False)
-    max_sum = serializers.CharField(required=False, allow_blank=True, default='')
-    min_sum = serializers.CharField(required=False, allow_blank=True, default='')
-    desc = serializers.ChoiceField(choices=('ascending', 'descending', 'date'), required=False, default='date')
+    date_start = serializers.DateField(required=True, write_only=True)
+    date_end = serializers.DateField(required=True, write_only=True)
+    tags = serializers.ListField(child=serializers.CharField(), allow_empty=True, required=True, write_only=True)
+    q = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    op_type = serializers.ListField(child=serializers.CharField(), allow_empty=True, required=False, write_only=True)
+    max_sum = serializers.CharField(required=False, allow_blank=True, default='', write_only=True)
+    min_sum = serializers.CharField(required=False, allow_blank=True, default='', write_only=True)
+    desc = serializers.ChoiceField(choices=('ascending', 'descending', 'date'), required=False, default='date', write_only=True)
 
     def validate(self, attrs):
         if attrs['date_start'] > attrs['date_end']:

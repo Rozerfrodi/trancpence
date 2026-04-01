@@ -1,9 +1,10 @@
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
 from main.views import *
+from trancpence.my_routs import MyRouter
 
 app_name = 'main'
-router = DefaultRouter()
+
+router = MyRouter()
 router.register(r'operations', OperationViewSet, basename='main_operation')
 urlpatterns = [
 	path('', tpshka, name='tpshka'),

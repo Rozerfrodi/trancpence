@@ -19,11 +19,9 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from main.views import *
 
-from main.views import tpshka
-from trancpence.my_routs import MyRouter
 
-router = MyRouter()
 urlpatterns = [
     path('', tpshka, name='tpshka'),
     path('admin/', admin.site.urls),
@@ -38,6 +36,7 @@ urlpatterns = (
     [
         path('', include('main.urls')),
         path('', include('users.urls')),
+        path('', include('loan.urls')),
     ]
     + urlpatterns
 )
