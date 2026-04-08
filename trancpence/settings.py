@@ -166,7 +166,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
-        'drf_dark_theme.renderers.MoonshineBrowsableAPIRenderer', # comment when production
+        'drf_dark_theme.renderers.MoonshineBrowsableAPIRenderer',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
@@ -228,13 +228,11 @@ EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 
 
-# Ваши учетные данные Gmail
-EMAIL_HOST_USER = config.get('EMAIL_HOST_USER')  # Замените на ваш Gmail
-EMAIL_HOST_PASSWORD = config.get('EMAIL_HOST_PASSWORD')  # Пароль приложения, не обычный пароль!
+EMAIL_HOST_USER = config.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config.get('EMAIL_HOST_PASSWORD') 
 
-# Дополнительные настройки
-DEFAULT_FROM_EMAIL = config.get('EMAIL_HOST_USER')  # Email отправителя по умолчанию
-SERVER_EMAIL = config.get('EMAIL_HOST_USER')  # Email для отправки ошибок сервера
+DEFAULT_FROM_EMAIL = config.get('EMAIL_HOST_USER')
+SERVER_EMAIL = config.get('EMAIL_HOST_USER')
 
 
 
@@ -242,17 +240,17 @@ TESTING = 'test' in sys.argv
 TESTING = TESTING or 'test_coverage' in sys.argv or 'pytest' in sys.modules
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'django-db'
-CELERY_WORKER_POOL = 'prefork'  # или 'eventlet', 'gevent', 'threads'
+CELERY_WORKER_POOL = 'prefork'  
 CELERY_WORKER_CONCURRENCY = 12
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 if sys.platform == 'win32':
     CELERY_WORKER_POOL = 'threads'
     CELERY_WORKER_CONCURRENCY = 16
 CELERY = {
-    'broker_url': 'redis://localhost:6379/0',  # URL брокера сообщений
-    'task_always_eager': TESTING,  # Синхронное выполнение задач при тестировании
-    'timezone': TIME_ZONE,  # Временная зона для планировщика
-    'result_backend': 'django-db',  # Закомментировано, но может быть использовано
+    'broker_url': 'redis://localhost:6379/0',  
+    'task_always_eager': TESTING, 
+    'timezone': TIME_ZONE, 
+    'result_backend': 'django-db',
     'result_extended': True,
     'task_track_started': True,
 }
