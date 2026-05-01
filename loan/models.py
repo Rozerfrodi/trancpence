@@ -49,10 +49,11 @@ class MainLoan(models.Model):
 
 class LoanDetail(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    loan = models.ForeignKey(MainLoan, on_delete=models.CASCADE)
+    loan = models.ForeignKey(MainLoan, on_delete=models.CASCADE, verbose_name='details')
+    pay_date = models.DateField(null=False, blank=False, auto_now=True)
     title = models.CharField(max_length=50, null=True, blank=False,
                              default=f'payment for {datetime.now().strftime("%d-%m-%Y")}')
-    amount = models.DecimalField(max_digits=12, decimal_places=2, default=None, null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, null=False, blank=False)
 
     class Meta:
         db_table = 'Loan_Detail'

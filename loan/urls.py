@@ -8,6 +8,8 @@ from trancpence.my_routs import *
 app_name = 'loan'
 router = DefaultRouter()
 router.register('loan', LoanCRUDView, basename='loan')
+router.register('loan_detail', LoanDetailOPS, basename='loan_detail')
 urlpatterns = [
-    path('', include(router.urls), name='loan_create'),
+    path('', include(router.urls)),
+
 ]
