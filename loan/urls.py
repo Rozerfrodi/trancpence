@@ -3,7 +3,6 @@ from rest_framework import routers
 from rest_framework.routers import DefaultRouter
 
 from loan.views import *
-from trancpence.my_routs import *
 
 app_name = 'loan'
 router = DefaultRouter()
