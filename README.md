@@ -60,7 +60,7 @@
 
 - Дописать документацию ко всем эндпоинтам которые есть в проекте 
 ## Screenshots
-![рисунок 1](https://drive.google.com/file/d/1azg0fHsglnLzgb9-jxiGA3-D1GhMx4lv/view?usp=drive_link)
+рисунок 1 - https://drive.google.com/file/d/1azg0fHsglnLzgb9-jxiGA3-D1GhMx4lv/view?usp=drive_link
 
-![рисунок 2](https://drive.google.com/file/d/1paKTgi6QWOk6Sg_v6S-OUqVYBXL9kYH9/view?usp=drive_link)
+рисунок 2 - https://drive.google.com/file/d/1paKTgi6QWOk6Sg_v6S-OUqVYBXL9kYH9/view?usp=drive_link
 
