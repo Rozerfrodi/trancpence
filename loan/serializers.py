@@ -15,7 +15,7 @@ class LoanSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MainLoan
-        exclude = ('user', 'down_payment', 'property_value', 'commission')
+        exclude = ('user', 'down_payment', 'property_value', 'commission', 'interest_rate')
 
     def validate(self, attrs):
         if attrs.get('date_start') and attrs.get('date_end'):
@@ -26,8 +26,8 @@ class LoanSerializer(serializers.ModelSerializer):
                     raise ValidationError('min_sum must be less than max_sum')
         return attrs
 
-class LoanCreateSerializer(serializers.ModelSerializer):
 
+class LoanCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = MainLoan
         fields = '__all__'
@@ -43,7 +43,12 @@ class LoanDeleteSerializer(serializers.ModelSerializer):
 
 
 class LoanUpdateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = MainLoan
         exclude = ('user', 'id', 'created_at', 'edited_at')
+
+
+class DetailLoanOPSSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LoanDetail
+        fields = '__all__'

@@ -1,3 +1,4 @@
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from django.db.models import *
 from rest_framework import status
@@ -13,6 +14,7 @@ from loan.serializers import *
 class LoanCRUDView(ViewSet):
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONOpenAPIRenderer]
+
     @action(methods=["post"], detail=False, url_path="create", url_name="loan_create")
     def loan_create(self, request):
         data = request.data
@@ -38,7 +40,7 @@ class LoanCRUDView(ViewSet):
                     or data.get('loan_term', False) or data.get('monthly_payment', False) or data.get('interest_rate',
                                                                                                       False):
                 return Response({'error': f'{('down_payment', 'property_value',
-                                      'loan_term', 'monthly_payment', 'interest_rate')} must`t be in this type'},
+                                              'loan_term', 'monthly_payment', 'interest_rate')} must`t be in this type'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
         elif installment:
@@ -59,7 +61,6 @@ class LoanCRUDView(ViewSet):
         serializer.save()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
     @action(methods=["post"], detail=False, url_path="list", url_name="loan_list")
     def loan_list(self, request):
@@ -121,3 +122,26 @@ class LoanCRUDView(ViewSet):
         obj = LoanSVG.objects.all().values()
         return Response({'svg': obj}, status=status.HTTP_200_OK)
 
+
+class LoanDetailOPS(ViewSet):
+    permission_classes = [IsAuthenticated, ]
+
+    @action(methods=["post"], detail=True, url_path="ops_list", url_name="ops")
+    def detail_ops(self, request, pk=None):
+        data = LoanDetail.objects.filter(loan_id=pk, user=request.user)
+        serializer = DetailLoanOPSSerializer(instance=data, many=True)
+        val_data = {
+            'operations': serializer.data,
+            'total_paid': data.aggregate(total_paid=Sum('amount'))['total_paid'],
+            'left_to_pay': data.aggregate(left_to_pay=F('loan__loan_amount') - Sum('amount'))['left_to_pay']
+        }
+        return Response(val_data, status=status.HTTP_200_OK)
+
+    @action(methods=["post"], detail=True, url_path="ops_create", url_name="ops")
+    def detail_add_ops(self, request, pk=None):
+        request.data['loan'] = pk
+        request.data['user'] = request.user.id
+        serializer = DetailLoanOPSSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

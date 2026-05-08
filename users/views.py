@@ -333,7 +333,8 @@ class GetCurrencyAPIView(ViewSet):
         return Response({'currency': list(tags)})
 
     def set_sett(self, request):
-        currency_set = Currency.objects.filter(currency=request.data.get('currency')).values_list('id', flat=True).first()
+        currency_set = Currency.objects.filter(currency=request.data.get('currency')).values_list('id',
+                                                                                                  flat=True).first()
         if not currency_set:
             return Response({'status': status.HTTP_400_BAD_REQUEST, 'message': 'Currency does not exist'})
         UserSettings.objects.filter(user=request.user).update(user_currency=currency_set)
